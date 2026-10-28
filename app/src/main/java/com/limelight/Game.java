@@ -95,6 +95,7 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.View.OnGenericMotionListener;
+import android.view.View.OnHoverListener;
 import android.view.View.OnSystemUiVisibilityChangeListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewOutlineProvider;
@@ -137,7 +138,7 @@ import android.view.ViewGroup;
 
 
 public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
-        OnGenericMotionListener, OnTouchListener, NvConnectionListener, EvdevListener,
+        OnGenericMotionListener, OnTouchListener, OnHoverListener, NvConnectionListener, EvdevListener,
         OnSystemUiVisibilityChangeListener, GameGestures, StreamContainer.InputCallbacks,
         ExternalControllerView.InputCallbacks,
         PerfOverlayListener, UsbDriverService.UsbDriverStateListener, View.OnKeyListener {
@@ -459,6 +460,7 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
         streamContainer = findViewById(R.id.streamContainer);
         streamContainer.init(this, prefConfig);
         streamContainer.setOnGenericMotionListener(this);
+        streamContainer.setOnHoverListener(this);
         streamContainer.setOnKeyListener(this);
         streamContainer.setInputCallbacks(this);
         streamContainer.setCommitTextEnabled(prefConfig.enableCommitText);
@@ -476,6 +478,7 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
         // allows proper touch splitting, which the OSC relies upon.
         View backgroundTouchView = findViewById(R.id.backgroundTouchView);
         backgroundTouchView.setOnTouchListener(this);
+        backgroundTouchView.setOnHoverListener(this);
 
 
         panZoomHandler = new PanZoomHandler(
@@ -2450,6 +2453,8 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
                 return MoonBridge.LI_TOUCH_EVENT_CANCEL_ALL;
 
             case MotionEvent.ACTION_HOVER_ENTER:
+                return MoonBridge.LI_TOUCH_EVENT_HOVER_ENTER;
+
             case MotionEvent.ACTION_HOVER_MOVE:
                 return MoonBridge.LI_TOUCH_EVENT_HOVER;
 
@@ -3415,6 +3420,14 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
         eventY = Math.min(Math.max(eventY, 0), streamContainer.getHeight());
 
         conn.sendMousePosition((short)eventX, (short)eventY, (short) streamContainer.getWidth(), (short) streamContainer.getHeight());
+    }
+
+    @Override
+    public boolean onHover(View view, MotionEvent event) {
+        if (event.getActionMasked() == MotionEvent.ACTION_HOVER_ENTER) {
+            view.requestUnbufferedDispatch(event);
+        }
+        return handleMotionEvent(view, event);
     }
 
     @Override
